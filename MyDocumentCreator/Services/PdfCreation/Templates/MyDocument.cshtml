@@ -1,0 +1,173 @@
+﻿@model MyDocumentCreator.Models.MyDocumentModel
+@using Microsoft.AspNetCore.Html
+@using Newtonsoft.Json
+
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>@Model.Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="css/my-document.css" />
+
+</head>
+
+<body>
+    <div class="my-document">
+        <div class="document-content">
+            <div class="left-section">
+                <div class="drawing-space">                    
+                    <div class="svg-wrapper">
+                        @functions {
+                            public HtmlString? SvgHtml { get { return new HtmlString(Model.DrawingSvgString); } }
+                        }
+                        @SvgHtml
+                    </div>
+                </div>                
+                <div class="bottom-section">
+                    <p>Bottom Section</p>
+                </div>
+            </div>
+
+            <div class="right-section">
+                <p class="page-name">@Model.Title</p>
+                <br />
+                <p>Calculation of scale:</p>
+                <p>Original scale: <span class="drawing-scale-in-svg"></span></p>
+                <p>Insertion scale: <span class="svg-insertion-scale-in-html"></span></p>
+                <p>
+                    Scale:
+                    <br />
+                    = (multiply both quantities)
+                    <br />
+                    = <span class="drawing-scale-in-svg"></span> x <span class="svg-insertion-scale-in-html"></span>
+                    <br />
+                    = <span class="document-drawing-scale-decimal"></span>
+                </p>
+                <p>Scale (decimal):
+                    <br />
+                    <span class="document-drawing-scale-decimal"></span>
+                </p>
+                <p>Scale (imperial):
+                    <br />
+                    <span class="document-drawing-scale-imperial"></span>
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!--test data for testing / development of this html template-->
+    <script type="application/json" id="document-data-test">
+        {
+            "Width": 36,
+            "Height": 24,
+            "Margin": 0.7,
+            "DrawingScaleInSource": 0.10411111,
+            "SvgScaleCorrectionFactor": 1.0
+        }
+    </script>
+    <!--real data to be used if available-->
+    <script type="application/json" id="document-data">
+        @functions {
+            public HtmlString? DocDataJsonHtml { get { return new HtmlString(Model.DocumentDataJson); } }
+        }
+        @DocDataJsonHtml
+    </script>
+    <script src="js/element-helper.js"></script>
+    <script src="js/svg-helper.js"></script>
+    <script src="js/value-formatting-helper.js"></script>
+    <script src="js/math-helper.js"></script>
+
+    <script>
+
+        document.querySelector(".bottom-section p").innerHTML = "Hello";
+
+        // get element handles
+        const elDocumentDataTest = document.getElementById("document-data-test");
+        const elDocumentData = document.getElementById("document-data");
+        const elMyDocument = document.querySelector(".my-document");
+        const elDrawingSpace = document.querySelector(".my-document .drawing-space");
+        const elSvgWrapper = document.querySelector(".my-document .drawing-space .svg-wrapper");
+        const elSvg = document.querySelector(".my-document .drawing-space svg");
+
+        // globar variables
+        let gDocumentData;
+        let gDocumentWidth;
+        let gDocumentHeight;
+        let gDocumentMargin;
+        let gDrawingScaleInSource;
+        let gSvgScaleCorrectionFactor;
+        let gSvgInsertionScaleInHtml;
+        let gDrawingScaleInDocument;
+
+        $(document).ready(function () {
+
+            // resize SVG image to its geometries
+            svgResizeToContent(elSvg);
+
+            // assumptions
+            gSvgInsertionScaleInHtml = 1.0;
+            gDrawingScaleInDocument = 1.0;
+
+            // read supplied data
+            // try parsing test data first, else use real data
+            try {
+                gDocumentData = JSON.parse(elDocumentData.textContent);
+                console.log("JSON-pasing the supplied data succeeded.");
+            } catch (error) {
+                console.log("JSON-pasing the supplied data failed. Will use test data.");
+                gDocumentData = JSON.parse(elDocumentDataTest.textContent);
+            }
+
+            // read specified parameters
+            gDocumentWidth = gDocumentData.Width;
+            gDocumentHeight = gDocumentData.Height;
+            gDocumentMargin = gDocumentData.Margin;
+            gDrawingScaleInSource = gDocumentData.DrawingScaleInSource;
+            gSvgScaleCorrectionFactor = gDocumentData.SvgScaleCorrectionFactor;
+            console.log(`SvgScaleCorrectionFactor: ${gSvgScaleCorrectionFactor}`);
+            console.log("Helloo");
+
+            // apply SVG scale correction, required when SVG comes from PDF via PdfToSvg (.NET) library
+            svgResizeByScaleFactor(elSvg, gSvgScaleCorrectionFactor);
+
+            // set document parameters
+            elMyDocument.style.width = `${gDocumentWidth}in`;
+            elMyDocument.style.height = `${gDocumentHeight}in`;
+            elMyDocument.style.padding = `${gDocumentMargin}in ${gDocumentMargin}in ${gDocumentMargin}in ${gDocumentMargin}in`;
+
+            // respond to the resize event of the drawing space
+            new ResizeObserver(entries => {
+                entries.forEach(entry => {
+                    fitOversizedDrawing();
+                    reportDrawingScale();
+                });
+            }).observe(elMyDocument);
+
+        });
+
+        function fitOversizedDrawing() {
+
+            // fit SVG within the drawing space if oversized
+            // and hence determine the insersion scale of the SVG in HTML
+            gSvgInsertionScaleInHtml = fitOversizedElement(elSvgWrapper);
+
+            // calculate the actual projected scale on the document
+            gDrawingScaleInDocument = gDrawingScaleInSource * gSvgInsertionScaleInHtml;
+
+        }
+
+        function reportDrawingScale() {
+            $(".drawing-scale-in-svg").text(gDrawingScaleInSource.toFixed(3));
+            $(".svg-insertion-scale-in-html").text(gSvgInsertionScaleInHtml.toFixed(3));
+            $(".document-drawing-scale-decimal").text(gDrawingScaleInDocument.toFixed(3));
+            $(".document-drawing-scale-imperial").text(formatScaleInImperial(gDrawingScaleInDocument, 64, " = ", "-", 12));
+        }
+
+    </script>
+
+</body>
+
+</html>

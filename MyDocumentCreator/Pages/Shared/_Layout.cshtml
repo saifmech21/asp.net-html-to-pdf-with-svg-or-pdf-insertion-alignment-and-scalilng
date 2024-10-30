@@ -1,0 +1,51 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Creator by Saif</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+
+    <style type="text/css">
+        body { font-family: Arial; font-size: 10pt; }
+
+        #document-list {
+            height: 300px;
+            overflow: scroll;
+            border: 1px solid gray;
+        }
+        table { border: 1px solid #ccc; border-collapse: collapse; }
+        table th { background-color: #F7F7F7; color: #333; font-weight: bold; }
+        table th, table td { padding: 5px; border: 1px solid #ccc; }
+        #pdf_container {
+            background: #ccc;
+            text-align: center;
+            display: none;            
+            padding: 5px;
+            height: fit-content;
+            overflow: auto;
+        }
+        #pdf_container canvas {
+                width: 100%;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

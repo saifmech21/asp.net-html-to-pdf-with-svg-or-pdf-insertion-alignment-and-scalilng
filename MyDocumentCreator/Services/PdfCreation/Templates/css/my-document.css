@@ -1,0 +1,84 @@
+﻿* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0px;
+}
+
+.my-document {
+    width: 11in;
+    height: 8.5in;
+    padding: 18mm;
+    margin: 0;
+    border: 1px solid #828282;
+    background-color: rgb(122, 122, 118);
+    font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+}
+
+    .my-document .document-content {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+
+    .my-document .left-section {
+        width: 0;
+        display: flex;
+        flex: 1 0 auto;
+        flex-direction: column;
+    }
+
+    .my-document .right-section {
+        width: 12cm;
+        height: 100%;
+        padding: 15px;
+        background-color: bisque;
+        flex: 0 0 auto;
+    }
+
+    .my-document .drawing-space {
+        width: 100%;
+        height: 0px;
+        padding: 0.5cm;
+        background-color: rgb(141, 91, 15);
+        flex: 1 0 auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .my-document .bottom-section {
+        height: 10cm;
+        background-color: rgb(236, 227, 183);
+        flex: 0 0 auto;
+    }
+
+    .my-document .svg-wrapper {
+        /*padding: 10px;*/
+        width: fit-content;
+        height: fit-content;
+        /*background: rgb(197, 255, 197);*/
+    }
+
+        .my-document .svg-wrapper svg {
+            background-color: rgb(161, 163, 233);
+        }
+
+    .my-document .page-name {
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: 2.5em;
+        margin: 0;
+    }
+
+    .my-document p {
+        font-size: 2em;
+    }
+
+        .my-document p.hidden-text,
+        .my-document span.hidden-text {
+            color: red;
+            display: none;
+        }

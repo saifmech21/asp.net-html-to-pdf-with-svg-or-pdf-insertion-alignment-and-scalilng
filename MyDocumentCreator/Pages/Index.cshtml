@@ -1,0 +1,244 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+
+<h4>Document Creator by Saif</h4>
+<hr />
+<div class="row">
+    <div class="col-sm-3">
+        <div class="row">
+            <h5>New Document</h5>
+        </div>
+        <div class="row">
+            <form method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="form-group">
+                    <label class="control-label">Title:</label>
+                    <input asp-for="MyDocument.Title" class="form-control" value="Saif" />
+                    <span asp-validation-for="MyDocument.Title" class="text-danger"></span>
+                </div>
+                <br />
+                <div class="form-group">
+                    <label class="control-label">Width (inches):</label>
+                    <input asp-for="MyDocument.Width" class="form-control" value="36" />
+                    <span asp-validation-for="MyDocument.Width" class="text-danger"></span>
+                </div>
+                <br />
+                <div class="form-group">
+                    <label class="control-label">Height (inches):</label>
+                    <input asp-for="MyDocument.Height" class="form-control" value="24" />
+                    <span asp-validation-for="MyDocument.Height" class="text-danger"></span>
+                </div>
+                <br />
+                <div class="form-group">
+                    <label class="control-label">Margin (inches):</label>
+                    <input asp-for="MyDocument.Margin" class="form-control" value="0.5" />
+                    <span asp-validation-for="MyDocument.Margin" class="text-danger"></span>
+                </div>
+                <br />
+                <div class="form-group">
+                    <label class="control-label">Drawing (PDF or SVG):</label>
+                    <input asp-for="MyDocument.DrawingFileObj" type="file" accept=".pdf, .svg" />
+                    <span asp-validation-for="MyDocument.DrawingFileObj" class="text-danger"></span>
+                </div>
+                <br />
+                <div class="form-group">
+                    <label class="control-label">Drawing scale:</label>
+                    <input asp-for="MyDocument.DrawingScaleInSource" class="form-control" value="1" />
+                    <span asp-validation-for="MyDocument.DrawingScaleInSource" class="text-danger"></span>
+                </div>
+                <br />
+                <div class="form-group">
+                    <input type="submit" value="Create" asp-page-handler="SubmitDocumentData" class="btn btn-primary" />
+                </div>
+
+            </form>
+        </div>       
+        <br />
+        <br />
+        <h5>Documents</h5>
+        <div class="row" id="document-list">
+            <table id="tblDocuments" cellpadding="0" cellspacing="0">
+                <tr>
+                    <th style="width:120px">Id</th>
+                    <th style="width:120px">Timestamp</th>
+                    <th style="width:120px">Title</th>
+                    <th style="width:80px"></th>
+                    <th style="width:80px"></th>
+                </tr>
+                @foreach (var doc in Model.MyDocuments.OrderByDescending(f => f.Id))
+                {
+                    <tr>
+                        <td>@doc.Id</td>
+                        <td>@doc.TimeStamp</td>
+                        <td>@doc.Title</td>
+                        <td><a class="view" href="javascript:;" rel='@doc.Id'>View</a></td>
+                        <td><a class="save" href="javascript:;" rel='@doc.Id'>Download</a></td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+    </div>
+    <div class="col-sm-9">
+        <div class="row">
+            <h5>PDF</h5>
+        </div>
+        <div class="row">
+            <div id="pdf_container"></div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf_viewer.min.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        getAndViewPdf("GetLastDocument");
+    });
+
+
+    // handlers for fetching and viewing PDFs
+    $(function () {
+        $("[id*=tblDocuments] .view").click(function () {
+            var id = $(this).attr("rel");
+            getAndViewPdf("GetDocument", id);
+        });
+    });
+    // handlers for fetching and saving PDFs
+    $(function () {
+        $("[id*=tblDocuments] .save").click(function () {
+            var id = $(this).attr("rel");
+            getAndSavePdf("GetDocument", id);
+        });
+    });
+
+    
+    function getAndViewPdf(handlerName, id) {
+        $.ajax({
+            type: "POST",
+            url: "/Index?handler=" + handlerName,
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            data: { "id": id },
+            success: function
+                (response) {
+                console.log("Response:");
+                console.log(response);
+                var bytes = Base64ToBytes(response.data);
+                LoadPdfFromBlob(bytes);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Error retrieving file:", textStatus, errorThrown);
+            }
+        });
+    }
+
+
+    function getAndSavePdf(handlerName, id) {
+        $.ajax({
+            type: "POST",
+            url: "/Index?handler=" + handlerName,
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            data: { "id": id },
+            success: function
+                (response) {
+                console.log("Response:");
+                console.log(response);
+                var bytes = Base64ToBytes(response.data);
+
+                var blob = new Blob([bytes], { type: 'application/pdf' });
+
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "MyDocument";
+
+                document.body.appendChild(link);
+
+                link.click();
+
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Error retrieving file:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    //#region ALL ABOUT PDF VIEWER
+    var pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js';
+    var pdfDoc = null;
+    var scale = 1.25;
+    var resolution = 1;
+
+    function LoadPdfFromBlob(blob) {
+        // read from blob
+        pdfjsLib.getDocument({ data: blob }).promise.then(function (pdfDoc_) {
+            pdfDoc = pdfDoc_;
+
+            // refer to the container
+            var pdf_container = document.getElementById("pdf_container");
+            pdf_container.innerHTML = "";
+            pdf_container.style.display = "block";
+
+            // iterate over the pages
+            for (var i = 1; i <= pdfDoc.numPages; i++) {
+                console.log("Page " + i);
+                RenderPage(pdf_container, i);
+            }
+        });
+    };
+    
+    function RenderPage(pdf_container, num) {
+        pdfDoc.getPage(num).then(function (page) {
+            // create the canvas
+            var canvas = document.createElement('canvas');
+            canvas.id = 'pdf-' + num;
+            ctx = canvas.getContext('2d');
+            pdf_container.appendChild(canvas);
+
+            // gaps between pages
+            var spacer = document.createElement("div");
+            spacer.style.height = "20px";
+            pdf_container.appendChild(spacer);
+
+            // canvas dimension
+            var viewport = page.getViewport({ scale: scale });
+            canvas.height = resolution * viewport.height;
+            canvas.width = resolution * viewport.width;
+
+            // render now
+            var renderContext = {
+                canvasContext: ctx,
+                viewport: viewport,
+                transform: [resolution, 0, 0, resolution, 0, 0]
+            };
+
+            page.render(renderContext);
+        });
+    };
+    
+    function Base64ToBytes(base64) {
+        var s = window.atob(base64);
+        var bytes = new Uint8Array(s.length);
+        for (var i = 0; i < s.length; i++) {
+            bytes[i] = s.charCodeAt(i);
+        }
+        return bytes;
+    };
+    //#endregion
+    
+</script>
+
