@@ -61,7 +61,7 @@
         <br />
         <h5>Documents</h5>
         <div class="row" id="document-list">
-            <table id="tblDocuments" cellpadding="0" cellspacing="0">
+            <table id="tblMyDocuments" cellpadding="0" cellspacing="0">
                 <tr>
                     <th style="width:120px">Id</th>
                     <th style="width:120px">Timestamp</th>
@@ -106,14 +106,14 @@
 
     // handlers for fetching and viewing PDFs
     $(function () {
-        $("[id*=tblDocuments] .view").click(function () {
+        $("[id*=tblMyDocuments] .view").click(function () {
             var id = $(this).attr("rel");
             getAndViewPdf("GetDocument", id);
         });
     });
     // handlers for fetching and saving PDFs
     $(function () {
-        $("[id*=tblDocuments] .save").click(function () {
+        $("[id*=tblMyDocuments] .save").click(function () {
             var id = $(this).attr("rel");
             getAndSavePdf("GetDocument", id);
         });
